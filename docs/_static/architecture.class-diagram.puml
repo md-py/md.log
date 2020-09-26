@@ -1,0 +1,46 @@
+@startuml
+
+skinparam class {
+  BackgroundColor #ebebeb
+  ArrowColor      #333
+  BorderColor     #333
+}
+
+skinparam lineType ortho
+
+package psr.log {
+  interface psr.log.LoggerInterface {
+    + emergency (message: str, context: dict = None) -> None
+    + alert (message: str, context: dict = None) -> None
+    + critical (message: str, context: dict = None) -> None
+    + error (message: str, context: dict = None) -> None
+    + warning (message: str, context: dict = None) -> None
+    + notice (message: str, context: dict = None) -> None
+    + info (message: str, context: dict = None) -> None
+    + debug (message: str, context: dict = None) -> None
+    ---
+    + log (level: str, message: str, context: dict = None) -> None
+  }
+}
+
+package md.log {
+  class md.log.Logger implements psr.log.LoggerInterface {
+    - stream: str
+    - channel: str
+    - log_format: str
+    - date_format: str
+    ---
+    + emergency (message: str, context: dict = None) -> None
+    + alert (message: str, context: dict = None) -> None
+    + critical (message: str, context: dict = None) -> None
+    + error (message: str, context: dict = None) -> None
+    + warning (message: str, context: dict = None) -> None
+    + notice (message: str, context: dict = None) -> None
+    + info (message: str, context: dict = None) -> None
+    + debug (message: str, context: dict = None) -> None
+    ---
+    + log (level: str, message: str, context: dict = None) -> None
+  }
+}
+
+@enduml
