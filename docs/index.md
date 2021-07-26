@@ -23,7 +23,9 @@ import md.log
 
 if __name__ == '__main__':
     # arrange
-    logger = md.log.Logger(filename='/tmp/my-app.log')
+    logger = md.log.Logger(handler_list=[
+        md.log.DefaultHandler(filename='/tmp/my-app.log')
+    ])
 
     # act
     logger.emergency('Application log', {'context-example': 42})
@@ -40,13 +42,13 @@ if __name__ == '__main__':
 
 ```
 # cat /tmp/my-app.log
-[2023-01-19 17:23:17.403825] app.EMERGENCY: Application log {"context-example": 42}
-[2023-01-19 17:23:17.404138] app.ALERT: Application log {"context-example": 42}
-[2023-01-19 17:23:17.404974] app.CRITICAL: Application log {"context-example": 42}
-[2023-01-19 17:23:17.405162] app.ERROR: Application log {"context-example": 42}
-[2023-01-19 17:23:17.405231] app.WARNING: Application log {"context-example": 42}
-[2023-01-19 17:23:17.405291] app.NOTICE: Application log {"context-example": 42}
-[2023-01-19 17:23:17.405347] app.INFO: Application log {"context-example": 42}
-[2023-01-19 17:23:17.405410] app.DEBUG: Application log {"context-example": 42}
-[2023-01-19 17:23:17.405462] app.CUSTOM-LEVEL: Application log {"context-example": 42}
+[2021-07-27 17:23:17.403825] app.EMERGENCY: Application log {"context-example": 42}
+[2021-07-27 17:23:17.404138] app.ALERT: Application log {"context-example": 42}
+[2021-07-27 17:23:17.404974] app.CRITICAL: Application log {"context-example": 42}
+[2021-07-27 17:23:17.405162] app.ERROR: Application log {"context-example": 42}
+[2021-07-27 17:23:17.405231] app.WARNING: Application log {"context-example": 42}
+[2021-07-27 17:23:17.405291] app.NOTICE: Application log {"context-example": 42}
+[2021-07-27 17:23:17.405347] app.INFO: Application log {"context-example": 42}
+[2021-07-27 17:23:17.405410] app.DEBUG: Application log {"context-example": 42}
+[2021-07-27 17:23:17.405462] app.CUSTOM-LEVEL: Application log {"context-example": 42}
 ```
