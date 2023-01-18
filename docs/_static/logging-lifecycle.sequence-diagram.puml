@@ -1,0 +1,12 @@
+@startuml
+
+Logger -> Patch
+Patch -> Logger
+
+Logger -> Keep
+Keep -> Format
+Format -> Keep
+
+Keep -> Keep : "eg. Saves log entry to file"
+
+@enduml

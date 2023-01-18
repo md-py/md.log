@@ -1,25 +1,218 @@
+import collections
 import datetime
 
 import pytest
 import unittest.mock
 
+import psr.log
 import md.log
 
 
-class TestPidRecordProcessor:
-    def test_process(self) -> None:
+class TestPidPatch:
+    def test_patch(self) -> None:
         # arrange
         record = {'extra': {}}
 
         # act
-        pid_record_processor = md.log.PidRecordProcessor()
+        pid_patch = md.log.PidPatch()
         with unittest.mock.patch('os.getpid') as os_mock:
             os_mock.return_value = 42
-            pid_record_processor.process(record=record)
+            pid_patch.patch(record=record)
 
         # assert
         assert 'pid' in record['extra']
         assert record['extra']['pid'] == 42
+
+
+class TestThreadPidPatch:
+    def test_patch(self) -> None:
+        # arrange
+        record = {'extra': {}}
+
+        # act
+        with unittest.mock.patch('threading.get_native_id') as threading_mock:
+            pid_patch = md.log.ThreadPidPatch()
+            threading_mock.return_value = 42
+            pid_patch.patch(record=record)
+
+        # assert
+        assert 'thread' in record['extra']
+        assert record['extra']['thread'] == 42
+
+
+class TestFormatExceptionPatch:
+    def test_patch(self) -> None:  # white/positive
+        # arrange
+        try:
+            raise RuntimeError()
+        except RuntimeError as e:
+            exception = e
+
+        record = {
+            'level': psr.log.LEVEL_DEBUG,
+            'context': {'exception': exception}
+        }
+
+        # act
+        with unittest.mock.patch('traceback.format_exception') as traceback_format_exception_mock:
+            traceback_format_exception_mock.return_value = 'Traceback (Mock)'
+            format_exception_patch = md.log.FormatExceptionPatch(level_set={
+                psr.log.LEVEL_DEBUG,
+            })
+            format_exception_patch.patch(record=record)
+
+        # assert
+        traceback_format_exception_mock.assert_called_once_with(
+            type(exception),
+            exception,
+            exception.__traceback__
+        )
+        assert record['context']['exception'] == 'Traceback (Mock)'
+
+    def test_patch_wrong_exception_in_context(self) -> None:  # white/negative
+        # arrange
+        record = {
+            'level': psr.log.LEVEL_DEBUG,
+            'context': {'exception': 'something else'}
+        }
+
+        # act
+        with unittest.mock.patch('traceback.format_exception') as traceback_format_exception_mock:
+            format_exception_patch = md.log.FormatExceptionPatch(level_set={
+                psr.log.LEVEL_DEBUG,
+            })
+            format_exception_patch.patch(record=record)
+
+        # assert
+        traceback_format_exception_mock.assert_not_called()
+        assert record['context']['exception'] == 'something else'  # not changed
+
+    def test_patch_ignores_level(self) -> None:  # white/negative
+        # arrange
+        try:
+            raise RuntimeError('exception message')
+        except RuntimeError as e:
+            exception = e
+
+        record = {
+            'level': psr.log.LEVEL_DEBUG,
+            'context': {'exception': exception}
+        }
+
+        # act
+        with unittest.mock.patch('traceback.format_exception') as traceback_format_exception_mock:
+            traceback_format_exception_mock.return_value = ['RuntimeError: exception message\n']
+            format_exception_patch = md.log.FormatExceptionPatch(level_set={
+                psr.log.LEVEL_CRITICAL,
+            })
+            format_exception_patch.patch(record=record)
+
+        # assert
+        traceback_format_exception_mock.assert_called_once_with(
+            type(exception),
+            exception,
+            None
+        )
+        assert record['context']['exception'] == ['RuntimeError: exception message\n']
+
+    def test_patch_without_exception_in_context(self) -> None:  # white/negative
+        # arrange
+        record = {
+            'level': psr.log.LEVEL_DEBUG,
+            'context': {}
+        }
+
+        # act
+        with unittest.mock.patch('traceback.format_exception') as traceback_format_exception_mock:
+            format_exception_patch = md.log.FormatExceptionPatch(level_set={
+                psr.log.LEVEL_DEBUG,
+            })
+            format_exception_patch.patch(record=record)
+
+        # assert
+        traceback_format_exception_mock.assert_not_called()
+        assert record['context'] == {}  # not changed
+
+
+class TestFormat:
+    @pytest.mark.parametrize(
+        'level', ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug', 'custom-level']
+    )
+    def test_format(self, level: str) -> None:
+        # arrange
+        channel = 'request'
+        date_format = '%Y-%m-%d %H:%M:%S.%f'
+        record_format = '[{date!s}] {channel!s}.{level!s}: {message!s} {context!s} {extra!s}'
+        context = {'foo': 'bar'}
+        extra = {'bar': 'baz'}
+        message = 'log act'
+
+        # act
+        now_datetime_scalar = '2023-01-18 16:45:43.481516'
+        now_datetime_mock = unittest.mock.Mock(spec=datetime.datetime)
+        now_datetime_mock.strftime.return_value = now_datetime_scalar
+
+        format_ = md.log.Format(
+            record_format=record_format,
+            date_format=date_format,
+        )
+
+        log = format_.format(record=collections.OrderedDict(
+            date=now_datetime_mock,
+            channel=channel,
+            level=level,
+            message=message,
+            context=context,
+            extra=extra,
+        ))
+
+        # assert
+        now_datetime_mock.strftime.assert_called_once_with(date_format)
+        assert log == f'[{now_datetime_scalar!s}] {channel!s}.{level.upper()!s}: {message!s}' + ' {"foo": "bar"} {"bar": "baz"}'
+
+
+class TestKeepStream:
+    @pytest.mark.parametrize(
+        'level', ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug', 'custom-level']
+    )
+    def test_handle(self, level: str) -> None:
+        # arrange
+        filename = '/tmp/md.log'
+        channel = 'request'
+        context = {'foo': 'bar'}
+        extra = {'bar': 'baz'}
+        message = 'log act'
+
+        now_datetime_scalar = '2023-01-18 16:45:43.481516'
+        now_datetime_mock = unittest.mock.Mock(spec=datetime.datetime)
+
+        result_log = (  # actually, dummy example
+            f'[{now_datetime_scalar!s}] {channel!s}.{level.upper()!s}: {message!s}'
+            ' {"foo": "bar"} {"bar": "baz"}'
+        )
+
+        format_ = unittest.mock.Mock(spec=md.log.FormatInterface)
+        format_.format.return_value = result_log
+
+        # act
+        with unittest.mock.patch('builtins.open') as open_mock:
+            default_keep = md.log.KeepStream.from_file(
+                filename_list=[filename],
+                format_=format_,
+            )
+            default_keep.keep(record=dict(
+                date=now_datetime_mock,
+                channel=channel,
+                level=level,
+                message=message,
+                context=context,
+                extra=extra,
+            ))
+
+        # assert
+        open_mock.assert_called_once_with(filename, 'a')
+        open_mock.return_value.write.assert_called_once_with(result_log + '\n')
+        open_mock.return_value.flush.assert_called_once()
 
 
 class TestLogger:
@@ -43,36 +236,35 @@ class TestLogger:
         def process_1(record: dict) -> None:
             record['extra']['foo'] = 'bar'
 
-        record_processor_1 = unittest.mock.Mock(spec=md.log.RecordProcessorInterface)
-        record_processor_1.process = process_1
-        record_processor_2 = unittest.mock.Mock(spec=md.log.RecordProcessorInterface)
-        record_processor_3 = unittest.mock.Mock(spec=md.log.RecordProcessorInterface)
-        handler_1 = unittest.mock.Mock(spec=md.log.HandlerInterface)
-        handler_2 = unittest.mock.Mock(spec=md.log.HandlerInterface)
-        handler_3 = unittest.mock.Mock(spec=md.log.HandlerInterface)
+        patch_1 = unittest.mock.Mock(spec=md.log.PatchInterface)
+        patch_1.patch = process_1
+        patch_2 = unittest.mock.Mock(spec=md.log.PatchInterface)
+        patch_3 = unittest.mock.Mock(spec=md.log.PatchInterface)
+        keep_1 = unittest.mock.Mock(spec=md.log.KeepInterface)
+        keep_2 = unittest.mock.Mock(spec=md.log.KeepInterface)
+        keep_3 = unittest.mock.Mock(spec=md.log.KeepInterface)
 
-        record_processor_list = [record_processor_1, record_processor_2, record_processor_3]
-        handler_list = [handler_1, handler_2, handler_3]
+        patch_list = [patch_1, patch_2, patch_3]
+        keep_list = [keep_1, keep_2, keep_3]
 
         now_datetime_scalar = '2023-01-18 16:45:43.481516'
         now_datetime_mock = unittest.mock.Mock(spec=datetime.datetime)
         now_datetime_mock.strftime.return_value = now_datetime_scalar
 
-        record = {
-            'date': now_datetime_mock,
-            'channel': channel,
-            'level': level,
-            'message': message,
-            'context': context,
-            'extra': {'foo': 'bar'},
-        }
+        record = collections.OrderedDict(
+            date=now_datetime_mock,
+            channel=channel,
+            level=level,
+            message=message,
+            context=context,
+            extra=collections.OrderedDict(foo='bar'),
+        )
 
         # act
-
         logger = md.log.Logger(
             name=channel,
-            handler_list=handler_list,
-            record_processor_list=record_processor_list,
+            keep_list=keep_list,
+            patch_list=patch_list,
         )
 
         assert hasattr(logger, method)
@@ -87,55 +279,8 @@ class TestLogger:
             logging_method(**kw)
 
         # assert
-        for handler in handler_list:
-            handler.handle.assert_called_once_with(record=record)
+        for keep in keep_list:
+            keep.keep.assert_called_once_with(record=record)
 
-        for record_processor in [record_processor_2, record_processor_3]:
-            record_processor.process.assert_called_once_with(record=record)
-
-
-class TestDefaultHandler:
-    @pytest.mark.parametrize(
-        'level', ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug', 'custom-level']
-    )
-    def test_handle(self, level: str) -> None:
-        # arrange
-        filename = '/tmp/md.log'
-        channel = 'request'
-        date_format = '%Y-%m-%d %H:%M:%S.%f'
-        record_format = '[{date!s}] {channel!s}.{level!s}: {message!s} {context!s} {extra!s}'
-        context = {'foo': 'bar'}
-        extra = {'bar': 'baz'}
-        message = 'log act'
-
-        now_datetime_scalar = '2023-01-18 16:45:43.481516'
-        now_datetime_mock = unittest.mock.Mock(spec=datetime.datetime)
-        now_datetime_mock.strftime.return_value = now_datetime_scalar
-
-        # act
-        with (
-            unittest.mock.patch('builtins.open') as open_mock,
-            # unittest.mock.patch('datetime.datetime') as datetime_datetime_mock,
-        ):
-            # datetime_datetime_mock.now.return_value = now_datetime_mock
-            default_handler = md.log.DefaultHandler(
-                filename=filename,
-                record_format=record_format,
-                date_format=date_format
-            )
-            default_handler.handle(record=dict(
-                date=now_datetime_mock,
-                channel=channel,
-                level=level,
-                message=message,
-                context=context,
-                extra=extra,
-            ))
-
-        # assert
-        now_datetime_mock.strftime.assert_called_once_with(date_format)
-        open_mock.assert_called_once_with(filename, 'a')
-        open_mock.return_value.write.assert_called_once_with(
-            f'[{now_datetime_scalar!s}] {channel!s}.{level.upper()!s}: {message!s}' + ' {"foo": "bar"} {"bar": "baz"}\n'
-        )
-        open_mock.return_value.flush.assert_called_once()
+        for patch in [patch_2, patch_3]:
+            patch.patch.assert_called_once_with(record=record)

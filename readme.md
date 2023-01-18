@@ -1,6 +1,6 @@
 # md.log
 
-md.log is the simplest [psr.log](../psr.log) contract implementation component 
+md.log is advanced [psr.log 2](../psr.log) contract implementation component 
 that provides API to perform application logging.
 
 ## Architecture overview

@@ -24,31 +24,9 @@ package psr.log {
 }
 
 package md.log {
-  interface RecordProcessorInterface {
-    + process(record: dict) -> dict
-  }
-
-  interface HandlerInterface {
-    + handle(record: dict) -> dict
-  }
-
-  class PidRecordProcessor implements RecordProcessorInterface {
-    + process(record: dict) -> dict
-  }
-
-  class DefaultHandler implements HandlerInterface {
-    - record_format: str
-    - date_format: str
-    - filename: str
-    ---
-    + handle(record: dict) -> None
-  }
-
-  class Logger implements psr.log.LoggerInterface {
-    - stream: str
-    - channel: str
-    - log_format: str
-    - date_format: str
+  class md.log.Logger implements psr.log.LoggerInterface {
+    - patch_list: List[PatchInterface]
+    - keep_list: List[KeepInterface]
     ---
     + emergency (message: str, context: dict = None) -> None
     + alert (message: str, context: dict = None) -> None
@@ -62,8 +40,48 @@ package md.log {
     + log (level: str, message: str, context: dict = None) -> None
   }
 
-  Logger *-> HandlerInterface : "1:n"
-  Logger o-> RecordProcessorInterface : "1:1"
+  interface md.log.KeepInterface {
+    + keep(record: dict) -> None
+  }
+
+  interface md.log.PatchInterface {
+    + patch(record: dict) -> dict
+  }
+
+  interface md.log.FormatInterface {
+    + format(record: dict) -> str
+  }
+
+  class md.log.Format implements md.log.FormatInterface {
+    - record_format: str
+    - date_format: str
+    ---
+    + format(record: dict) -> str
+  }
+
+  class md.log.ThreadPidPatch implements md.log.PatchInterface {
+    + patch(record: dict) -> dict
+  }
+  class md.log.FormatExceptionPatch implements md.log.PatchInterface {
+    + patch(record: dict) -> dict
+  }
+
+  class md.log.KeepStream implements md.log.KeepInterface {
+    - format: FormatInterface
+    - stream_list: List[IO]
+    ---
+    + {static} from_file(filename_list: List[str]) -> None
+    ---
+    + keep(record: dict) -> None
+  }
+
+  class md.log.PidPatch implements md.log.PatchInterface {
+    + patch(record: dict) -> dict
+  }
+
+  md.log.Logger o--> md.log.PatchInterface : "1:n"
+  md.log.Logger *-> md.log.KeepInterface : "1:n"
+  md.log.KeepStream o--> md.log.FormatInterface : "1:1"
 }
 
 @enduml
