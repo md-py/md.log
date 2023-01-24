@@ -4,7 +4,7 @@ import datetime
 import psr.log
 
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 __author__ = 'https://md.land/md'
 __all__ = (
     # Metadata
@@ -72,8 +72,8 @@ class Logger(psr.log.LoggerInterface):
         """ Writes a log message """
         self._stream.write(self._log_format.format(
             date=datetime.datetime.now().strftime(self._date_format),
-            channel=self._channel.lower(),
-            level=level.upper(),
+            channel=self._channel,
+            level=level,
             message=message,
             context=json.dumps(context) if context else '{}',
         ) + '\n')
