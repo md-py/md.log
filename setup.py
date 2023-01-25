@@ -5,7 +5,7 @@ with open('readme.md') as fh:
 
 setuptools.setup(
     name='md.log',
-    version='2.0.0',
+    version='2.1.0',
     description='Logger',
     long_description=long_description,
     long_description_content_type='text/markdown',

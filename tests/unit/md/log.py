@@ -136,6 +136,6 @@ class TestDefaultHandler:
         now_datetime_mock.strftime.assert_called_once_with(date_format)
         open_mock.assert_called_once_with(filename, 'a')
         open_mock.return_value.write.assert_called_once_with(
-            f'[{now_datetime_scalar!s}] {channel!s}.{level.upper()!s}: {message!s}' + ' {"foo": "bar"} {"bar": "baz"}\n'
+            f'[{now_datetime_scalar!s}] {channel!s}.{level!s}: {message!s}' + ' {"foo": "bar"} {"bar": "baz"}\n'
         )
         open_mock.return_value.flush.assert_called_once()
