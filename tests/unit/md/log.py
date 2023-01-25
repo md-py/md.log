@@ -171,6 +171,50 @@ class TestFormat:
         assert log == f'[{now_datetime_scalar!s}] {channel!s}.{level!s}: {message!s}' + ' {"foo": "bar"} {"bar": "baz"}'
 
 
+class TestSerializationFormat:
+    @pytest.mark.parametrize(
+        'level', ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug', 'custom-level']
+    )
+    def test_format(self, level: str) -> None:
+        # arrange
+        channel = 'request'
+        date_format = '%Y-%m-%d %H:%M:%S.%f'
+        context = {'foo': 'bar'}
+        extra = {'bar': 'baz'}
+        message = 'log act'
+
+        serializer_mock = unittest.mock.Mock()  # let for example serialize to json
+        serializer_mock.return_value = '{"date": "2023-01-25 15:39:50.084948", "channel": "app", "level": "debug", "message": "example message", "context": {}, "extra": {}}'
+
+        now_datetime_scalar = '2023-01-25 14:45:43.481516'
+        now_datetime_mock = unittest.mock.Mock(spec=datetime.datetime)
+        now_datetime_mock.strftime.return_value = now_datetime_scalar
+
+        # act
+        format_ = md.log.SerializationFormat(serializer=serializer_mock, date_format=date_format)
+        log = format_.format(record=collections.OrderedDict(
+            date=now_datetime_mock,
+            channel=channel,
+            level=level,
+            message=message,
+            context=context,
+            extra=extra
+        ))
+
+        serializer_mock.assert_called_once_with(collections.OrderedDict(
+            date=now_datetime_scalar,
+            channel=channel,
+            level=level,
+            message=message,
+            context=context,
+            extra=extra
+        ))
+
+        # assert
+        now_datetime_mock.strftime.assert_called_once_with(date_format)
+        assert log == '{"date": "2023-01-25 15:39:50.084948", "channel": "app", "level": "debug", "message": "example message", "context": {}, "extra": {}}'  # dirty a bit
+
+
 class TestKeepStream:
     @pytest.mark.parametrize(
         'level', ['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug', 'custom-level']

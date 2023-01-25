@@ -9,7 +9,7 @@ import psr.log
 
 
 # Metadata
-__version__ = '3.1.0'
+__version__ = '3.2.0'
 __author__ = 'https://md.land/md'
 __all__ = (
     # Metadata
@@ -25,6 +25,7 @@ __all__ = (
     'ThreadPidPatch',
     'KeepStream',
     'Format',
+    'SerializationFormat',
     'Logger',
 )
 
@@ -117,7 +118,7 @@ class FormatExceptionPatch(PatchInterface):
         return f'FormatExceptionPatch(level_set={self._level_set!r})'
 
 
-class Format(FormatInterface):
+class Format(FormatInterface):  # todo consider to rename to `TextFormat` in next release
     def __init__(self, record_format: str = None, date_format: str = None) -> None:
         self._record_format = record_format or '[{date!s}] {channel!s}.{level!s}: {message!s} {context!s} {extra!s}'
         self._date_format = date_format or '%Y-%m-%d %H:%M:%S.%f'
@@ -134,6 +135,25 @@ class Format(FormatInterface):
 
     def __repr__(self) -> str:
         return f'Format(record_format={self._record_format!r}, date_format={self._date_format!r})'
+
+
+class SerializationFormat(FormatInterface):
+    def __init__(self, serializer: typing.Callable[[dict], str], date_format: str = None) -> None:
+        self._serializer = serializer
+        self._date_format = date_format or '%Y-%m-%d %H:%M:%S.%f'
+
+    def format(self, record: typing.Dict[str, typing.Any]) -> str:
+        return self._serializer(collections.OrderedDict(
+            date=record['date'].strftime(self._date_format),
+            channel=record['channel'],
+            level=record['level'],
+            message=record['message'],
+            context=record['context'] if record['context'] else {},
+            extra=record['extra'] if record['extra'] else {},
+        ))
+
+    def __repr__(self) -> str:
+        return f'SerializationFormat(date_format={self._date_format!r})'
 
 
 class KeepStream(KeepInterface):

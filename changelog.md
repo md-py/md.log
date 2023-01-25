@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
-### Added
+## [3.2.0] - 2023-01-25
+### Added 
 
+- `md.log.SerializationFormat` component implemented to use any log 
+  entry serialization (e.g. JSON) 
 - add `PidPatch`, `ThreadPidPatch`, `FormatExceptionPatch` components instance representation
 
 ### Changed
@@ -86,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Basic `psr.log:^1` implementation
 
+[3.2.0]: https://github.com/md-py/md.log/releases/tag/3.2.0
 [3.1.0]: https://github.com/md-py/md.log/releases/tag/3.1.0
 [3.0.0]: https://github.com/md-py/md.log/releases/tag/3.0.0
 [2.1.0]: https://github.com/md-py/md.log/releases/tag/2.1.0
