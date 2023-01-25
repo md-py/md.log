@@ -5,7 +5,7 @@ that provides API to perform application logging.
 
 ## Architecture overview
 
-![Architecture overview](docs/_static/architecture.class-diagram.svg)
+[![Architecture overview][architecture-overview]][architecture-overview]
 
 ## Install
 
@@ -22,5 +22,7 @@ Read documentation with examples: https://development.md.land/python/md.log/
 Take a look for [md.bridge.di_log](../md.bridge.di.log/) that simplifies 
 dependency initialization and integration into application built on top of [md.di](../md.di/)
 
-# [Changelog](changelog.md)
-# [License (MIT)](license.md)
+## [Changelog](changelog.md)
+## [License (MIT)](license.md)
+
+[architecture-overview]: docs/_static/architecture.class-diagram.svg

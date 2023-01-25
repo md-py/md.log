@@ -45,10 +45,9 @@ package md.log {
   }
 
   class Logger implements psr.log.LoggerInterface {
-    - stream: str
-    - channel: str
-    - log_format: str
-    - date_format: str
+    - name: str
+    - handler_list: typing.List[HandlerInterface] = None
+    - record_processor_list: typing.List[RecordProcessorInterface] = None
     ---
     + emergency (message: str, context: dict = None) -> None
     + alert (message: str, context: dict = None) -> None
