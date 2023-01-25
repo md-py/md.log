@@ -124,10 +124,7 @@ class Format(FormatInterface):
         )
 
     def __repr__(self) -> str:
-        return 'FormatRecord(' \
-               f'record_format={self._record_format!r}, ' \
-               f'date_format={self._date_format!r}' \
-               ')'
+        return f'Format(record_format={self._record_format!r}, date_format={self._date_format!r})'
 
 
 class KeepStream(KeepInterface):
@@ -156,7 +153,7 @@ class KeepStream(KeepInterface):
         )
 
     def __repr__(self) -> str:
-        return f'StreamHandler(stream_list={self._stream_list!r}), format={self._format!r}'
+        return f'KeepStream(stream_list={self._stream_list!r}), format={self._format!r}'
 
     def __del__(self) -> None:
         if hasattr(self, '_stream_list'):
