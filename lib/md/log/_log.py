@@ -54,6 +54,9 @@ class PidPatch(PatchInterface):
         record['extra']['pid'] = os.getpid()
         return record
 
+    def __repr__(self) -> str:
+        return 'PidPatch()'
+
 
 class ThreadPidPatch(PatchInterface):
     """ Adds process identifier to log record """
@@ -65,6 +68,9 @@ class ThreadPidPatch(PatchInterface):
     def patch(self, record: typing.Dict[str, typing.Any]) -> dict:
         record['extra']['thread'] = threading.get_native_id()
         return record
+
+    def __repr__(self) -> str:
+        return 'ThreadPidPatch()'
 
 
 class FormatExceptionPatch(PatchInterface):
@@ -106,6 +112,9 @@ class FormatExceptionPatch(PatchInterface):
         )
 
         return record
+
+    def __repr__(self) -> str:
+        return f'FormatExceptionPatch(level_set={self._level_set!r})'
 
 
 class Format(FormatInterface):
@@ -175,11 +184,13 @@ class Logger(psr.log.LoggerInterface):
         assert len(self._keep_list) > 0, 'No keep action makes no sense'
 
     def __repr__(self) -> str:
-        return 'Logger(' \
-               f'name={self._name!r}, ' \
-               f'keep_list={self._keep_list!r}, ' \
-               f'patch_list={self._patch_list!r}' \
-               ')'
+        return (
+            'Logger('
+            f'name={self._name!r}, '
+            f'keep_list={self._keep_list!r}, '
+            f'patch_list={self._patch_list!r}'
+            ')'
+        )
 
     def emergency(self, message: str, context: dict = None) -> None:
         self.log(level=psr.log.LEVEL_EMERGENCY, message=message, context=context)
