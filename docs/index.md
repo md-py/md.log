@@ -112,7 +112,7 @@ Typically, this format action is injected into related `md.log.KeepInterface`
 implementation and called on `keep` action is invoked, but by design this action 
 may be reused in any other place to format internal structure to a string.
 
-#### Format configuration
+#### Text format configuration
 
 ```python3
 import md.log
@@ -130,6 +130,66 @@ format_ = md.log.Format(
   record_format='<{date!s}> {channel!s}.{level!s}: {message!s} {context!s} {extra!s}',
   date_format='%Y-%m-%d %H:%M:%S',  # without microseconds for example
 )
+
+# ... then somewhere later:
+
+keep_stream = md.log.KeepStream.from_file(
+    filename_list=['/dev/stderr'],
+    format_=format_,
+)
+
+logger = md.log.Logger(keep_list=[keep_stream])
+```
+
+#### Serialization format configuration
+
+`md.log.SerializationFormat` component designed to call a custom serializer, 
+it could be any format.
+
+##### JSON serializer format configuration
+###### Builtin JSON serializer
+
+Builtin JSON serializer could be used to serialize record into JSON, for example:
+
+```python3
+import json
+import md.log
+
+format_ = md.log.SerializationFormat(serializer=json.dumps)
+# format_ = md.log.SerializationFormat(serializer=lambda record: json.dumps(record, indent=2))
+
+# ... then somewhere later:
+
+keep_stream = md.log.KeepStream.from_file(
+    filename_list=['/dev/stderr'],
+    format_=format_,
+)
+
+logger = md.log.Logger(keep_list=[keep_stream])
+logger.debug('example message')
+```
+
+Will log:
+
+```json
+{"date": "2023-01-25 15:13:14.414433", "channel": "app", "level": "debug", "message": "example message", "context": {}, "extra": {}}
+```
+
+###### Third-party JSON serializer
+
+[Orjson](https://github.com/ijl/orjson) library looks much faster than standard `json` library
+to serialize data. It could be used to serialize log record, for example:
+
+```sh
+pip install orjson
+```
+
+```python3
+import orjson
+import md.log
+
+format_ = md.log.SerializationFormat(serializer=orjson.dumps)
+# format_ = md.log.SerializationFormat(serializer=lambda record: orjson.dumps(record, option=orjson.OPT_SERIALIZE_DATACLASS))
 
 # ... then somewhere later:
 

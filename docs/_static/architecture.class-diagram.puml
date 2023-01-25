@@ -59,6 +59,13 @@ package md.log {
     + format(record: dict) -> str
   }
 
+  class SerializationFormat implements md.log.FormatInterface {
+    - serializer: Callable[[dict], str]
+    - date_format: str
+    ---
+    + format(record: dict) -> str
+  }
+
   class md.log.ThreadPidPatch implements md.log.PatchInterface {
     + patch(record: dict) -> dict
   }
@@ -71,7 +78,7 @@ package md.log {
     - stream_list: List[IO]
     ---
     + __init__(
-        stream_list: typing.List[typing.IO],
+        stream_list: List[IO],
         format_: FormatInterface = None
     ) -> None
     ---

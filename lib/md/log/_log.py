@@ -9,7 +9,7 @@ import psr.log
 
 
 # Metadata
-__version__ = '3.1.0'
+__version__ = '3.2.0'
 __author__ = 'https://md.land/md'
 __all__ = (
     # Metadata
@@ -25,6 +25,7 @@ __all__ = (
     'ThreadPidPatch',
     'KeepStream',
     'Format',
+    'SerializationFormat',
     'Logger',
 )
 
@@ -54,6 +55,9 @@ class PidPatch(PatchInterface):
         record['extra']['pid'] = os.getpid()
         return record
 
+    def __repr__(self) -> str:
+        return 'PidPatch()'
+
 
 class ThreadPidPatch(PatchInterface):
     """ Adds process identifier to log record """
@@ -65,6 +69,9 @@ class ThreadPidPatch(PatchInterface):
     def patch(self, record: typing.Dict[str, typing.Any]) -> dict:
         record['extra']['thread'] = threading.get_native_id()
         return record
+
+    def __repr__(self) -> str:
+        return 'ThreadPidPatch()'
 
 
 class FormatExceptionPatch(PatchInterface):
@@ -107,8 +114,11 @@ class FormatExceptionPatch(PatchInterface):
 
         return record
 
+    def __repr__(self) -> str:
+        return f'FormatExceptionPatch(level_set={self._level_set!r})'
 
-class Format(FormatInterface):
+
+class Format(FormatInterface):  # todo consider to rename to `TextFormat` in next release
     def __init__(self, record_format: str = None, date_format: str = None) -> None:
         self._record_format = record_format or '[{date!s}] {channel!s}.{level!s}: {message!s} {context!s} {extra!s}'
         self._date_format = date_format or '%Y-%m-%d %H:%M:%S.%f'
@@ -124,10 +134,26 @@ class Format(FormatInterface):
         )
 
     def __repr__(self) -> str:
-        return 'FormatRecord(' \
-               f'record_format={self._record_format!r}, ' \
-               f'date_format={self._date_format!r}' \
-               ')'
+        return f'Format(record_format={self._record_format!r}, date_format={self._date_format!r})'
+
+
+class SerializationFormat(FormatInterface):
+    def __init__(self, serializer: typing.Callable[[dict], str], date_format: str = None) -> None:
+        self._serializer = serializer
+        self._date_format = date_format or '%Y-%m-%d %H:%M:%S.%f'
+
+    def format(self, record: typing.Dict[str, typing.Any]) -> str:
+        return self._serializer(collections.OrderedDict(
+            date=record['date'].strftime(self._date_format),
+            channel=record['channel'],
+            level=record['level'],
+            message=record['message'],
+            context=record['context'] if record['context'] else {},
+            extra=record['extra'] if record['extra'] else {},
+        ))
+
+    def __repr__(self) -> str:
+        return f'SerializationFormat(date_format={self._date_format!r})'
 
 
 class KeepStream(KeepInterface):
@@ -156,7 +182,7 @@ class KeepStream(KeepInterface):
         )
 
     def __repr__(self) -> str:
-        return f'StreamHandler(stream_list={self._stream_list!r}), format={self._format!r}'
+        return f'KeepStream(stream_list={self._stream_list!r}), format={self._format!r}'
 
     def __del__(self) -> None:
         if hasattr(self, '_stream_list'):
@@ -178,11 +204,13 @@ class Logger(psr.log.LoggerInterface):
         assert len(self._keep_list) > 0, 'No keep action makes no sense'
 
     def __repr__(self) -> str:
-        return 'Logger(' \
-               f'name={self._name!r}, ' \
-               f'keep_list={self._keep_list!r}, ' \
-               f'patch_list={self._patch_list!r}' \
-               ')'
+        return (
+            'Logger('
+            f'name={self._name!r}, '
+            f'keep_list={self._keep_list!r}, '
+            f'patch_list={self._patch_list!r}'
+            ')'
+        )
 
     def emergency(self, message: str, context: dict = None) -> None:
         self.log(level=psr.log.LEVEL_EMERGENCY, message=message, context=context)
