@@ -168,7 +168,7 @@ class TestFormat:
 
         # assert
         now_datetime_mock.strftime.assert_called_once_with(date_format)
-        assert log == f'[{now_datetime_scalar!s}] {channel!s}.{level.upper()!s}: {message!s}' + ' {"foo": "bar"} {"bar": "baz"}'
+        assert log == f'[{now_datetime_scalar!s}] {channel!s}.{level!s}: {message!s}' + ' {"foo": "bar"} {"bar": "baz"}'
 
 
 class TestKeepStream:

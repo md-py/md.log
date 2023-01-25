@@ -9,7 +9,7 @@ import psr.log
 
 
 # Metadata
-__version__ = '3.0.0'
+__version__ = '3.1.0'
 __author__ = 'https://md.land/md'
 __all__ = (
     # Metadata
@@ -116,8 +116,8 @@ class Format(FormatInterface):
     def format(self, record: typing.Dict[str, typing.Any]) -> str:
         return self._record_format.format(
             date=record['date'].strftime(self._date_format),
-            channel=record['channel'].lower(),
-            level=record['level'].upper(),
+            channel=record['channel'],
+            level=record['level'],
             message=record['message'],
             context=json.dumps(record['context']) if record['context'] else '{}',
             extra=json.dumps(record['extra']) if record['extra'] else '{}',
