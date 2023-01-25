@@ -70,7 +70,15 @@ package md.log {
     - format: FormatInterface
     - stream_list: List[IO]
     ---
-    + {static} from_file(filename_list: List[str]) -> None
+    + __init__(
+        stream_list: typing.List[typing.IO],
+        format_: FormatInterface = None
+    ) -> None
+    ---
+    + {static} from_file(
+      filename_list: List[str],
+      format_: FormatInterface = None
+    ) -> None
     ---
     + keep(record: dict) -> None
   }
