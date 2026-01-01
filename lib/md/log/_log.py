@@ -9,7 +9,7 @@ import psr.log
 
 
 # Metadata
-__version__ = '3.2.0'
+__version__ = '3.2.1'
 __author__ = 'https://md.land/md'
 __all__ = (
     # Metadata
@@ -75,7 +75,7 @@ class ThreadPidPatch(PatchInterface):
 
 
 class FormatExceptionPatch(PatchInterface):
-    def __init__(self, level_set: set = None) -> None:
+    def __init__(self, level_set: typing.Optional[set] = None) -> None:
         import traceback
         self._traceback = traceback
         self._level_set = level_set or {
@@ -119,7 +119,11 @@ class FormatExceptionPatch(PatchInterface):
 
 
 class Format(FormatInterface):  # todo consider to rename to `TextFormat` in next release
-    def __init__(self, record_format: str = None, date_format: str = None) -> None:
+    def __init__(
+        self,
+        record_format: typing.Optional[str] = None,
+        date_format: typing.Optional[str] = None
+    ) -> None:
         self._record_format = record_format or '[{date!s}] {channel!s}.{level!s}: {message!s} {context!s} {extra!s}'
         self._date_format = date_format or '%Y-%m-%d %H:%M:%S.%f'
 
@@ -138,7 +142,11 @@ class Format(FormatInterface):  # todo consider to rename to `TextFormat` in nex
 
 
 class SerializationFormat(FormatInterface):
-    def __init__(self, serializer: typing.Callable[[dict], str], date_format: str = None) -> None:
+    def __init__(
+        self,
+        serializer: typing.Callable[[dict], str],
+        date_format: typing.Optional[str] = None
+    ) -> None:
         self._serializer = serializer
         self._date_format = date_format or '%Y-%m-%d %H:%M:%S.%f'
 
@@ -160,7 +168,7 @@ class KeepStream(KeepInterface):
     def __init__(
         self,
         stream_list: typing.List[typing.IO],
-        format_: FormatInterface = None
+        format_: typing.Optional[FormatInterface] = None
     ) -> None:
         self._format = format_ or Format()
         self._stream_list = stream_list
@@ -174,7 +182,7 @@ class KeepStream(KeepInterface):
             stream.flush()
 
     @classmethod
-    def from_file(cls, filename_list: typing.List[str], format_: FormatInterface = None) -> 'KeepStream':
+    def from_file(cls, filename_list: typing.List[str], format_: typing.Optional[FormatInterface] = None) -> 'KeepStream':
         assert isinstance(filename_list, list)
         return cls(
             stream_list=[open(filename, 'a') for filename in filename_list],
@@ -195,8 +203,8 @@ class Logger(psr.log.LoggerInterface):
     def __init__(
         self,
         name: str = 'app',
-        keep_list: typing.List[KeepInterface] = None,
-        patch_list: typing.List[PatchInterface] = None,
+        keep_list: typing.Optional[typing.List[KeepInterface]] = None,
+        patch_list: typing.Optional[typing.List[PatchInterface]] = None,
     ) -> None:
         self._name = name
         self._keep_list = keep_list or []
@@ -212,31 +220,31 @@ class Logger(psr.log.LoggerInterface):
             ')'
         )
 
-    def emergency(self, message: str, context: dict = None) -> None:
+    def emergency(self, message: str, context: typing.Optional[dict] = None) -> None:
         self.log(level=psr.log.LEVEL_EMERGENCY, message=message, context=context)
 
-    def alert(self, message: str, context: dict = None) -> None:
+    def alert(self, message: str, context: typing.Optional[dict] = None) -> None:
         self.log(level=psr.log.LEVEL_ALERT, message=message, context=context)
 
-    def critical(self, message: str, context: dict = None) -> None:
+    def critical(self, message: str, context: typing.Optional[dict] = None) -> None:
         self.log(level=psr.log.LEVEL_CRITICAL, message=message, context=context)
 
-    def error(self, message: str, context: dict = None) -> None:
+    def error(self, message: str, context: typing.Optional[dict] = None) -> None:
         self.log(level=psr.log.LEVEL_ERROR, message=message, context=context)
 
-    def warning(self, message: str, context: dict = None) -> None:
+    def warning(self, message: str, context: typing.Optional[dict] = None) -> None:
         self.log(level=psr.log.LEVEL_WARNING, message=message, context=context)
 
-    def notice(self, message: str, context: dict = None) -> None:
+    def notice(self, message: str, context: typing.Optional[dict] = None) -> None:
         self.log(level=psr.log.LEVEL_NOTICE, message=message, context=context)
 
-    def info(self, message: str, context: dict = None) -> None:
+    def info(self, message: str, context: typing.Optional[dict] = None) -> None:
         self.log(level=psr.log.LEVEL_INFO, message=message, context=context)
 
-    def debug(self, message: str, context: dict = None) -> None:
+    def debug(self, message: str, context: typing.Optional[dict] = None) -> None:
         self.log(level=psr.log.LEVEL_DEBUG, message=message, context=context)
 
-    def log(self, level: str, message: str, context: dict = None) -> None:
+    def log(self, level: str, message: str, context: typing.Optional[dict] = None) -> None:
         """ Writes a log message """
         record = collections.OrderedDict(
             date=datetime.datetime.now(),
