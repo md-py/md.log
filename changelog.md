@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [x] feature: add CI/CD github workflow configuration
 
+### Changed
+
+- [x] enhancement: set explicit `Optional` annotation for argument types
+
 ### Fixed
 
 - [x] fix: releases comparison links in `changelog` file
